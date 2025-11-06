@@ -44,7 +44,7 @@ const ScenarioPage: React.FC<{ lang: Language }> = ({ lang }) => {
         setFinalReview(null);
 
         try {
-            const data = await generateBrief('region_global', industry, designCategory, briefLang);
+            const data = await generateBrief(briefLang, 'region_global', industry, designCategory);
             setBriefData(data);
             setInteractions([{ id: Date.now(), content: data }]);
             setProjectState('in_progress');
@@ -283,11 +283,11 @@ const InteractionContent: React.FC<{ content: ScenarioInteraction['content'], la
         <div>
             <h3 className="font-bold text-lg text-slate-800 mb-4 border-b border-slate-200 pb-3">{t.timeline_initial_brief}</h3>
             <div className="transform sm:scale-95 origin-top-left">
-                {briefContent.type === 'logo' && <LogoBriefDisplay data={briefContent as LogoBriefData} lang={briefContent.lang} />}
-                {briefContent.type === 'web' && <WebBriefDisplay data={briefContent as WebBriefData} lang={briefContent.lang} />}
-                {briefContent.type === 'brand' && <BrandBriefDisplay data={briefContent as BrandBriefData} lang={briefContent.lang} />}
-                {briefContent.type === 'presentation' && <PresentationBriefDisplay data={briefContent as PresentationBriefData} lang={briefContent.lang} />}
-                {briefContent.type === 'cover' && <CoverBriefDisplay data={briefContent as CoverBriefData} lang={briefContent.lang} />}
+                {briefContent.type === 'logo' && <LogoBriefDisplay data={briefContent as LogoBriefData} lang={lang} />}
+                {briefContent.type === 'web' && <WebBriefDisplay data={briefContent as WebBriefData} lang={lang} />}
+                {briefContent.type === 'brand' && <BrandBriefDisplay data={briefContent as BrandBriefData} lang={lang} />}
+                {briefContent.type === 'presentation' && <PresentationBriefDisplay data={briefContent as PresentationBriefData} lang={lang} />}
+                {briefContent.type === 'cover' && <CoverBriefDisplay data={briefContent as CoverBriefData} lang={lang} />}
             </div>
         </div>
     )

@@ -1,38 +1,18 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { 
     translations, 
     clientPersonalities, 
     colorPalettes, 
     deliverablesSets, 
-    fontRecommendations_en,
-    fontRecommendations_id,
+    fontRecommendations_en, 
     otherNotes_en, 
-    otherNotes_id,
     styleAttributesPairs,
     dailyChallengeCategoryMapping,
     detailedIndustryMapping
 } from '../constants';
 import type { Language, DesignCategory, AnyBriefData, LogoBriefData, WebBriefData, BrandBriefData, PresentationBriefData, CoverBriefData, DailyChallenge, FinalReview, ScenarioInteraction, CoreBriefType } from '../types';
 
-// Export the key so the UI can check for its existence.
-export const apiKey = process.env.API_KEY || '';
-
-let ai: GoogleGenAI | null = null;
-
-// Singleton pattern to initialize the AI client only when needed.
-// This prevents the app from crashing on startup if the key is missing.
-const getAiClient = (): GoogleGenAI => {
-    if (!apiKey) {
-        // This error will be caught by the functions calling the API.
-        throw new Error("API_KEY environment variable is not set. Please configure it to use the AI features.");
-    }
-    if (!ai) {
-        ai = new GoogleGenAI({ apiKey });
-    }
-    return ai;
-};
-
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
 const getRandom = <T,>(arr: T[]): T => {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -82,21 +62,19 @@ const briefConfigs: Record<CoreBriefType, any> = {
                 return `${baseQuery} The company is in the '${industryName}' industry, with a client based in '${regionName}'. Make the brand name, slogan, and cultural references feel appropriate for the '${regionName}' region. ${promptLanguageInstruction} Make it unique and wild.`;
             }
         },
-        processResponse: (aiText: string, industryName: string, lang: Language): LogoBriefData => {
+        processResponse: (aiText: string, industryName: string): LogoBriefData => {
             const aiData = JSON.parse(aiText);
-            const fontRecs = lang === 'id' ? fontRecommendations_id : fontRecommendations_en;
-            const otherNotes = lang === 'id' ? otherNotes_id : otherNotes_en;
             return {
                 ...aiData,
                 type: 'logo',
-                lang: lang,
+                lang: 'en',
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
                 tagline: aiData.tagline || "",
                 palette: getRandom(colorPalettes),
                 finalFiles: getRandom(deliverablesSets),
-                otherNote: getRandom(otherNotes),
-                fontNote: getRandom(fontRecs),
+                otherNote: getRandom(otherNotes_en),
+                fontNote: getRandom(fontRecommendations_en),
                 styles: styleAttributesPairs.map(pair => ({
                     pair: pair,
                     position: getRandomInt(1, 5)
@@ -124,7 +102,7 @@ const briefConfigs: Record<CoreBriefType, any> = {
             const subCategoryName = subCategory ? (translations[langKey][`category_${subCategory}`] || subCategory.replace(/_/g, ' ')) : 'web design';
 
             const promptLanguageInstruction = `All text fields in the JSON response MUST be in ${languageName}.`;
-            let baseQuery = `Generate a creative ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The project should be modern and have clear goals. Make the project name and summary creative and unique.`;
+            let baseQuery = `Generate a creative ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The project should be modern and have clear goals.`;
             if (challengeContext) {
                  baseQuery = `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
@@ -135,12 +113,12 @@ const briefConfigs: Record<CoreBriefType, any> = {
                 return `${baseQuery} The client is based in '${regionName}'. The project's tone and references should feel appropriate for that region. ${promptLanguageInstruction}`;
             }
         },
-        processResponse: (aiText: string, industryName: string, lang: Language): WebBriefData => {
+        processResponse: (aiText: string, industryName: string): WebBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'web',
-                lang: lang,
+                lang: 'en',
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -166,14 +144,14 @@ const briefConfigs: Record<CoreBriefType, any> = {
              if (challengeContext) {
                 return `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
-            return `Generate a comprehensive ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The brief should focus on the brand's core essence and required assets. The project name should be creative and memorable. ${promptLanguageInstruction}`;
+            return `Generate a comprehensive ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The brief should focus on the brand's core essence and required assets. ${promptLanguageInstruction}`;
         },
-        processResponse: (aiText: string, industryName: string, lang: Language): BrandBriefData => {
+        processResponse: (aiText: string, industryName: string): BrandBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'brand',
-                lang: lang,
+                lang: 'en',
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -198,16 +176,17 @@ const briefConfigs: Record<CoreBriefType, any> = {
             
             const promptLanguageInstruction = `All text fields in the JSON response MUST be in ${languageName}.`;
             if (challengeContext) {
+                // Fix: Use challengeContext instead of challenge
                 return `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
-            return `Generate a creative and clear ${subCategoryName} brief for a company in the '${industryName}' industry. The brief should outline the presentation's goals, audience, and desired visual style. Make the presentation title engaging and unique. ${promptLanguageInstruction}`;
+            return `Generate a creative and clear ${subCategoryName} brief for a company in the '${industryName}' industry. The brief should outline the presentation's goals, audience, and desired visual style. ${promptLanguageInstruction}`;
         },
-        processResponse: (aiText: string, industryName: string, lang: Language): PresentationBriefData => {
+        processResponse: (aiText: string, industryName: string): PresentationBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'presentation',
-                lang: lang,
+                lang: 'en',
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -234,14 +213,14 @@ const briefConfigs: Record<CoreBriefType, any> = {
             if (challengeContext) {
                 return `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
-            return `Generate a creative design brief for a ${subCategoryName} (e.g., book cover, report cover, or album art) for a fictional project related to the '${industryName}' industry. The brief should be imaginative and provide clear direction. Make the title and author name creative and fitting for the genre. ${promptLanguageInstruction}`;
+            return `Generate a creative design brief for a ${subCategoryName} (e.g., book cover, report cover, or album art) for a fictional project related to the '${industryName}' industry. The brief should be imaginative and provide clear direction. ${promptLanguageInstruction}`;
         },
-        processResponse: (aiText: string, industryName: string, lang: Language): CoverBriefData => {
+        processResponse: (aiText: string, industryName: string): CoverBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'cover',
-                lang: lang,
+                lang: 'en',
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -255,11 +234,11 @@ export const generateBrief = async (
     regionKey: string, 
     industryKey: string, 
     category: DesignCategory,
-    lang: Language = 'en',
     challengeContext?: DailyChallenge
 ): Promise<AnyBriefData> => {
     const briefType = mapCategoryToBriefType(category);
     const config = briefConfigs[briefType];
+    const lang: Language = 'en'; // Always generate in English
     
     if (!config) {
         throw new Error(`Invalid design category or mapping: ${category} -> ${briefType}`);
@@ -284,7 +263,7 @@ export const generateBrief = async (
     };
 
     const industryName = getFullIndustryName(finalIndustryKey);
-    const languageName = lang === 'id' ? "Indonesian" : "English";
+    const languageName = "English";
     const regionName = translations[lang][finalRegionKey];
 
     const systemPrompt = `You are a world-class creative director. Your task is to generate a creative and highly detailed design brief for a fictional company. The brief must be in the specified language and strictly follow the JSON schema provided.`;
@@ -292,8 +271,7 @@ export const generateBrief = async (
     const userQuery = config.buildUserQuery(industryName, regionName, languageName, challengeContext, category);
 
     try {
-        const aiClient = getAiClient();
-        const response = await aiClient.models.generateContent({
+        const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: userQuery,
             config: {
@@ -310,7 +288,7 @@ export const generateBrief = async (
             throw new Error("No valid content returned from AI.");
         }
         
-        const processedResponse = config.processResponse(aiText, industryName, lang);
+        const processedResponse = config.processResponse(aiText, industryName);
         // Ensure the correct core type is set on the final brief data
         processedResponse.type = briefType;
         return processedResponse;
@@ -318,7 +296,7 @@ export const generateBrief = async (
 
     } catch (error) {
         console.error("Error calling Gemini API:", error);
-        throw new Error((error as Error).message || "Failed to generate brief from AI service.");
+        throw new Error("Failed to generate brief from AI service.");
     }
 };
 
@@ -418,8 +396,7 @@ export const translateBrief = async (briefData: AnyBriefData, targetLang: Langua
     const userQuery = JSON.stringify(translatablePayload);
 
     try {
-        const aiClient = getAiClient();
-        const response = await aiClient.models.generateContent({
+        const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: userQuery,
             config: {
@@ -446,7 +423,7 @@ export const translateBrief = async (briefData: AnyBriefData, targetLang: Langua
 
     } catch (error) {
         console.error("Error translating brief:", error);
-        throw new Error((error as Error).message || "Failed to translate the brief.");
+        throw new Error("Failed to translate the brief.");
     }
 };
 
@@ -494,8 +471,7 @@ export const getDesignFeedback = async (
 
 
     try {
-        const aiClient = getAiClient();
-        const response = await aiClient.models.generateContent({
+        const response = await ai.models.generateContent({
             model: model,
             contents: {
                 parts: [
@@ -522,7 +498,7 @@ export const getDesignFeedback = async (
         return text;
     } catch (error) {
         console.error("Error calling Gemini API for design feedback:", error);
-        throw new Error((error as Error).message || "Failed to get feedback from the AI service.");
+        throw new Error("Failed to get feedback from the AI service.");
     }
 };
 
@@ -547,8 +523,7 @@ const getDailyChallenge = async (category: DesignCategory, industry: string, lan
     };
 
     try {
-        const aiClient = getAiClient();
-        const response = await aiClient.models.generateContent({
+        const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: userQuery,
             config: {
@@ -568,13 +543,12 @@ const getDailyChallenge = async (category: DesignCategory, industry: string, lan
 
     } catch (error) {
          console.error(`Error generating daily challenge for ${category}:`, error);
-         const errorMessage = (error as Error).message || `Could not generate a challenge for ${categoryName}. Please try again later.`;
          // Return a fallback challenge on error
          return {
             category,
             industry,
             projectName: `Error Generating Challenge`,
-            description: errorMessage,
+            description: `Could not generate a challenge for ${categoryName}. Please try again later.`,
             keywords: ["error", "debug", "retry"]
          }
     }
@@ -637,8 +611,7 @@ export const getFinalReview = async (
     };
 
     try {
-        const aiClient = getAiClient();
-        const response = await aiClient.models.generateContent({
+         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: userQuery,
             config: {
@@ -657,6 +630,6 @@ export const getFinalReview = async (
 
     } catch (error) {
         console.error("Error getting final review:", error);
-        throw new Error((error as Error).message || "Failed to get final review from AI service.");
+        throw new Error("Failed to get final review from AI service.");
     }
 };
