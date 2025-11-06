@@ -1,0 +1,5 @@
+{
+  "name": "ClientBuddy - Mock Client Generator v1",
+  "description": "An interactive web application that generates realistic, mock client design briefs for developers, designers, and creators to practice with. Features a chat simulation to clarify brief details with different client personalities.",
+  "requestFramePermissions": []
+}
