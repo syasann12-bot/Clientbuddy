@@ -17,7 +17,7 @@ import type { Language, DesignCategory, AnyBriefData, LogoBriefData, WebBriefDat
 
 // FIX: Use process.env.API_KEY to get the API key as per the coding guidelines.
 // This also resolves the TypeScript error 'Property 'env' does not exist on type 'ImportMeta''.
-const apiKey = process.env.API_KEY || '';
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 if (!apiKey) {
     console.error("API_KEY environment variable is not set. The application will not be able to connect to the AI service.");
