@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { translations } from './constants';
 import type { Language, Page, AnyBriefData } from './types';
 import Navbar from './components/Navbar';
@@ -21,21 +22,21 @@ const App: React.FC = () => {
         document.title = t.pageTitle;
     }, [lang]);
 
-    const handleNavigate = (newPage: Page) => {
+    const handleNavigate = useCallback((newPage: Page) => {
         setPage(newPage);
-    };
+    }, []);
 
-    const handleOpenChat = () => {
+    const handleOpenChat = useCallback(() => {
         if (briefData && briefData.type === 'logo') {
             setChatOpen(true);
         }
-    };
+    }, [briefData]);
     
-    const handleCloseChat = () => {
+    const handleCloseChat = useCallback(() => {
         setChatOpen(false);
-    };
+    }, []);
 
-    const handleBriefGenerated = (data: AnyBriefData) => {
+    const handleBriefGenerated = useCallback((data: AnyBriefData) => {
         setBriefData(data);
         setPage('home');
          // Scroll to the brief output after a short delay to allow the page to render
@@ -43,7 +44,7 @@ const App: React.FC = () => {
             const briefElement = document.getElementById('brief-output');
             briefElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
-    };
+    }, []);
 
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">

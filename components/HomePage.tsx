@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { translations, regionMapping, detailedIndustryMapping, detailedDesignCategoryMapping } from '../constants';
 import type { Language, AnyBriefData, DesignCategory } from '../types';
 import { generateBrief, translateBrief } from '../services/geminiService';
@@ -34,13 +34,13 @@ const HomePage: React.FC<HomePageProps> = ({ lang, setBriefData, briefData, onOp
         setTranslatedBrief(null);
     }, [briefData]);
 
-    const handleGenerate = async () => {
+    const handleGenerate = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         setBriefData(null);
         setTranslatedBrief(null);
         try {
-            const data = await generateBrief(region, industry, designCategory);
+            const data = await generateBrief(region, industry, designCategory, 'en');
             setBriefData(data);
         } catch (err) {
             console.error(err);
@@ -48,9 +48,9 @@ const HomePage: React.FC<HomePageProps> = ({ lang, setBriefData, briefData, onOp
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [region, industry, designCategory, setBriefData]);
     
-    const handleTranslate = async () => {
+    const handleTranslate = useCallback(async () => {
         if (!briefData) return;
 
         setIsTranslating(true);
@@ -64,7 +64,7 @@ const HomePage: React.FC<HomePageProps> = ({ lang, setBriefData, briefData, onOp
         } finally {
             setIsTranslating(false);
         }
-    };
+    }, [briefData]);
 
     const dataToDisplay = translatedBrief || briefData;
     const currentBriefLang = dataToDisplay?.lang || 'en';

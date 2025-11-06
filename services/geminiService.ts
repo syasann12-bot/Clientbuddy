@@ -1,18 +1,29 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { 
     translations, 
     clientPersonalities, 
     colorPalettes, 
     deliverablesSets, 
-    fontRecommendations_en, 
+    fontRecommendations_en,
+    fontRecommendations_id,
     otherNotes_en, 
+    otherNotes_id,
     styleAttributesPairs,
     dailyChallengeCategoryMapping,
     detailedIndustryMapping
 } from '../constants';
 import type { Language, DesignCategory, AnyBriefData, LogoBriefData, WebBriefData, BrandBriefData, PresentationBriefData, CoverBriefData, DailyChallenge, FinalReview, ScenarioInteraction, CoreBriefType } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+// FIX: Use process.env.API_KEY to get the API key as per the coding guidelines.
+// This also resolves the TypeScript error 'Property 'env' does not exist on type 'ImportMeta''.
+const apiKey = process.env.API_KEY || '';
+
+if (!apiKey) {
+    console.error("API_KEY environment variable is not set. The application will not be able to connect to the AI service.");
+}
+
+const ai = new GoogleGenAI({ apiKey });
 
 const getRandom = <T,>(arr: T[]): T => {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -62,19 +73,21 @@ const briefConfigs: Record<CoreBriefType, any> = {
                 return `${baseQuery} The company is in the '${industryName}' industry, with a client based in '${regionName}'. Make the brand name, slogan, and cultural references feel appropriate for the '${regionName}' region. ${promptLanguageInstruction} Make it unique and wild.`;
             }
         },
-        processResponse: (aiText: string, industryName: string): LogoBriefData => {
+        processResponse: (aiText: string, industryName: string, lang: Language): LogoBriefData => {
             const aiData = JSON.parse(aiText);
+            const fontRecs = lang === 'id' ? fontRecommendations_id : fontRecommendations_en;
+            const otherNotes = lang === 'id' ? otherNotes_id : otherNotes_en;
             return {
                 ...aiData,
                 type: 'logo',
-                lang: 'en',
+                lang: lang,
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
                 tagline: aiData.tagline || "",
                 palette: getRandom(colorPalettes),
                 finalFiles: getRandom(deliverablesSets),
-                otherNote: getRandom(otherNotes_en),
-                fontNote: getRandom(fontRecommendations_en),
+                otherNote: getRandom(otherNotes),
+                fontNote: getRandom(fontRecs),
                 styles: styleAttributesPairs.map(pair => ({
                     pair: pair,
                     position: getRandomInt(1, 5)
@@ -102,7 +115,7 @@ const briefConfigs: Record<CoreBriefType, any> = {
             const subCategoryName = subCategory ? (translations[langKey][`category_${subCategory}`] || subCategory.replace(/_/g, ' ')) : 'web design';
 
             const promptLanguageInstruction = `All text fields in the JSON response MUST be in ${languageName}.`;
-            let baseQuery = `Generate a creative ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The project should be modern and have clear goals.`;
+            let baseQuery = `Generate a creative ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The project should be modern and have clear goals. Make the project name and summary creative and unique.`;
             if (challengeContext) {
                  baseQuery = `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
@@ -113,12 +126,12 @@ const briefConfigs: Record<CoreBriefType, any> = {
                 return `${baseQuery} The client is based in '${regionName}'. The project's tone and references should feel appropriate for that region. ${promptLanguageInstruction}`;
             }
         },
-        processResponse: (aiText: string, industryName: string): WebBriefData => {
+        processResponse: (aiText: string, industryName: string, lang: Language): WebBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'web',
-                lang: 'en',
+                lang: lang,
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -144,14 +157,14 @@ const briefConfigs: Record<CoreBriefType, any> = {
              if (challengeContext) {
                 return `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
-            return `Generate a comprehensive ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The brief should focus on the brand's core essence and required assets. ${promptLanguageInstruction}`;
+            return `Generate a comprehensive ${subCategoryName} brief for a fictional company in the '${industryName}' industry. The brief should focus on the brand's core essence and required assets. The project name should be creative and memorable. ${promptLanguageInstruction}`;
         },
-        processResponse: (aiText: string, industryName: string): BrandBriefData => {
+        processResponse: (aiText: string, industryName: string, lang: Language): BrandBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'brand',
-                lang: 'en',
+                lang: lang,
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -176,17 +189,16 @@ const briefConfigs: Record<CoreBriefType, any> = {
             
             const promptLanguageInstruction = `All text fields in the JSON response MUST be in ${languageName}.`;
             if (challengeContext) {
-                // Fix: Use challengeContext instead of challenge
                 return `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
-            return `Generate a creative and clear ${subCategoryName} brief for a company in the '${industryName}' industry. The brief should outline the presentation's goals, audience, and desired visual style. ${promptLanguageInstruction}`;
+            return `Generate a creative and clear ${subCategoryName} brief for a company in the '${industryName}' industry. The brief should outline the presentation's goals, audience, and desired visual style. Make the presentation title engaging and unique. ${promptLanguageInstruction}`;
         },
-        processResponse: (aiText: string, industryName: string): PresentationBriefData => {
+        processResponse: (aiText: string, industryName: string, lang: Language): PresentationBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'presentation',
-                lang: 'en',
+                lang: lang,
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -213,14 +225,14 @@ const briefConfigs: Record<CoreBriefType, any> = {
             if (challengeContext) {
                 return `Based on this creative challenge: (Project: "${challengeContext.projectName}", Description: "${challengeContext.description}", Keywords: ${challengeContext.keywords.join(', ')}), generate a full, detailed ${subCategoryName} brief.`
             }
-            return `Generate a creative design brief for a ${subCategoryName} (e.g., book cover, report cover, or album art) for a fictional project related to the '${industryName}' industry. The brief should be imaginative and provide clear direction. ${promptLanguageInstruction}`;
+            return `Generate a creative design brief for a ${subCategoryName} (e.g., book cover, report cover, or album art) for a fictional project related to the '${industryName}' industry. The brief should be imaginative and provide clear direction. Make the title and author name creative and fitting for the genre. ${promptLanguageInstruction}`;
         },
-        processResponse: (aiText: string, industryName: string): CoverBriefData => {
+        processResponse: (aiText: string, industryName: string, lang: Language): CoverBriefData => {
             const aiData = JSON.parse(aiText);
             return {
                 ...aiData,
                 type: 'cover',
-                lang: 'en',
+                lang: lang,
                 clientPersonality: getRandom(clientPersonalities),
                 industry: industryName,
             };
@@ -234,11 +246,11 @@ export const generateBrief = async (
     regionKey: string, 
     industryKey: string, 
     category: DesignCategory,
+    lang: Language = 'en',
     challengeContext?: DailyChallenge
 ): Promise<AnyBriefData> => {
     const briefType = mapCategoryToBriefType(category);
     const config = briefConfigs[briefType];
-    const lang: Language = 'en'; // Always generate in English
     
     if (!config) {
         throw new Error(`Invalid design category or mapping: ${category} -> ${briefType}`);
@@ -263,7 +275,7 @@ export const generateBrief = async (
     };
 
     const industryName = getFullIndustryName(finalIndustryKey);
-    const languageName = "English";
+    const languageName = lang === 'id' ? "Indonesian" : "English";
     const regionName = translations[lang][finalRegionKey];
 
     const systemPrompt = `You are a world-class creative director. Your task is to generate a creative and highly detailed design brief for a fictional company. The brief must be in the specified language and strictly follow the JSON schema provided.`;
@@ -288,7 +300,7 @@ export const generateBrief = async (
             throw new Error("No valid content returned from AI.");
         }
         
-        const processedResponse = config.processResponse(aiText, industryName);
+        const processedResponse = config.processResponse(aiText, industryName, lang);
         // Ensure the correct core type is set on the final brief data
         processedResponse.type = briefType;
         return processedResponse;

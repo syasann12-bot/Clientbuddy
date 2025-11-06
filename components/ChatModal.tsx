@@ -72,7 +72,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, lang, briefData 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         const userText = inputValue.trim();
-        if (userText === '') return;
+        if (!userText) return;
 
         const newUserMessage: ChatMessage = { id: Date.now(), text: userText, sender: 'user' };
         setMessages(prev => [...prev, newUserMessage]);
@@ -128,6 +128,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, lang, briefData 
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder={t.chatPlaceholder}
                             className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 focus:shadow-md focus:shadow-blue-100"
+                            autoFocus
                         />
                         <button type="submit" className="bg-blue-500 text-white font-semibold p-3 rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
