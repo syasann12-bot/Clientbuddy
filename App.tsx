@@ -46,6 +46,16 @@ const App: React.FC = () => {
         }, 100);
     }, []);
 
+    if (!import.meta.env.VITE_GEMINI_API_KEY) {
+  return (
+    <div className="p-10 text-center">
+      <h1 className="text-2xl font-bold text-red-600">⚠️ Missing Gemini API Key</h1>
+      <p>Tambahkan <code>VITE_GEMINI_API_KEY</code> di Environment Variables (Vercel → Settings → Environment Variables).</p>
+    </div>
+  );
+}
+
+    
     return (
         <div className="bg-gray-50 min-h-screen flex flex-col">
             <Navbar
